@@ -2,9 +2,8 @@ from pathlib import Path
 import pandas as pd
 from prefect import flow, task
 from prefect_gcp.cloud_storage import GcsBucket
-from random import randint
-from prefect.filesystems import GitHub
-
+# from random import randint
+import os
 
 
 @task(retries=3)
@@ -31,7 +30,13 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
 @task()
 def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     """Write DataFrame out locally as parquet file"""
-    path = Path(f"data/{color}/{dataset_file}.parquet")
+    data_path = "data/"
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+    folder_path = f"{data_path}{color}/"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    path = Path(f"{folder_path}{dataset_file}.parquet")
     df.to_parquet(path, compression="gzip")
     return path
 
@@ -53,15 +58,14 @@ def etl_web_to_gcs() -> None:
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
     dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
     
-    
 
     df = fetch(dataset_url)
     df_clean = clean(df)
     path = write_local(df_clean, color, dataset_file)
     write_gcs(path)
-
-    github_block = GitHub.load("prefect-github")
+      
 
 
 if __name__ == "__main__":
     etl_web_to_gcs()
+    
