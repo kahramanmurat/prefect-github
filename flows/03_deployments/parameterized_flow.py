@@ -20,8 +20,12 @@ def fetch(dataset_url: str) -> pd.DataFrame:
 @task(log_prints=True)
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     """Fix dtype issues"""
+    # df["lpep_pickup_datetime"] = pd.to_datetime(df["lpep_pickup_datetime"])
+    # df["lpep_dropoff_datetime"] = pd.to_datetime(df["lpep_dropoff_datetime"])
+
     df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
     df["tpep_dropoff_datetime"] = pd.to_datetime(df["tpep_dropoff_datetime"])
+
     print(df.head(2))
     print(f"columns: {df.dtypes}")
     print(f"rows: {len(df)}")
@@ -39,7 +43,7 @@ def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
 @task()
 def write_gcs(path: Path) -> None:
     """Upload local parquet file to GCS"""
-    gcs_block = GcsBucket.load("zoom-gcs")
+    gcs_block = GcsBucket.load("zoom-gcs-yellow")
     gcs_block.upload_from_path(from_path=path, to_path=path)
     return
 
@@ -66,6 +70,6 @@ def etl_parent_flow(
 
 if __name__ == "__main__":
     color = "yellow"
-    months = [1, 2, 3]
-    year = 2021
+    months = [2,3]
+    year = 2019
     etl_parent_flow(months, year, color)

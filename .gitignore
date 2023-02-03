@@ -136,3 +136,5 @@ dmypy.json
 *.parquet
 *.csv
 *.json
+data/
+test.md
