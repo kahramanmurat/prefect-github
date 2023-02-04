@@ -30,13 +30,9 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
 @task()
 def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     """Write DataFrame out locally as parquet file"""
-    data_path = "data/"
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
-    folder_path = f"{data_path}{color}/"
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    path = Path(f"{folder_path}{dataset_file}.parquet")
+    path = Path(f"data/{color}/{dataset_file}.parquet")
+    if not path.parent.is_dir():
+        path.parent.mkdir(parents=True)
     df.to_parquet(path, compression="gzip")
     return path
 
@@ -50,11 +46,9 @@ def write_gcs(path: Path) -> None:
 
 
 @flow()
-def etl_web_to_gcs() -> None:
+def etl_web_to_gcs(year: int, month: int, color: str) -> None:
     """The main ETL function"""
-    color = "green"
-    year = 2020
-    month = 11
+
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
     dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
     
@@ -64,8 +58,15 @@ def etl_web_to_gcs() -> None:
     path = write_local(df_clean, color, dataset_file)
     write_gcs(path)
       
+@flow()
+def etl_parent_flow(months: list[int] = [4,5], year: int = 2020, color: str = "yellow"):
+    for month in months:
+        etl_web_to_gcs(year, month, color)
 
 
 if __name__ == "__main__":
-    etl_web_to_gcs()
+    color = "green"
+    year = 2019
+    months = [10,11,12]
+    etl_parent_flow()
     
