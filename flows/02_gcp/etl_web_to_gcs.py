@@ -68,5 +68,5 @@ if __name__ == "__main__":
     color = "green"
     year = 2019
     months = [10,11,12]
-    etl_parent_flow()
+    etl_parent_flow(months, year, color)
     
