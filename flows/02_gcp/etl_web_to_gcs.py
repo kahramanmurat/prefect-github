@@ -65,6 +65,6 @@ def etl_parent_flow(months: list[int] = [4], year: int = 2019, color: str = "gre
 if __name__ == "__main__":
     color = "green"
     year = 2019
-    months = [4]
+    months = [1,2,3]
     etl_parent_flow(months, year, color)
     
