@@ -12,15 +12,15 @@ def fetch(dataset_url: str) -> pd.DataFrame:
     # if randint(0, 1) > 0:
     #     raise Exception
 
-    df = pd.read_csv(dataset_url,compression='gzip', header=0, sep=' ', quotechar='"', error_bad_lines=False)
+    df = pd.read_csv(dataset_url)
     return df
 
 
 @task(log_prints=True)
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     """Fix dtype issues"""
-    df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
-    df["tpep_dropoff_datetime"] = pd.to_datetime(df["tpep_dropoff_datetime"])
+    # df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
+    # df["tpep_dropoff_datetime"] = pd.to_datetime(df["tpep_dropoff_datetime"])
     print(df.head(2))
     print(f"columns: {df.dtypes}")
     print(f"rows: {len(df)}")
@@ -28,9 +28,9 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @task()
-def write_local(df: pd.DataFrame, dataset_file: str) -> Path:
+def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     """Write DataFrame out locally as parquet file"""
-    path = Path(f"trip data/{dataset_file}.parquet")
+    path = Path(f"data/{color}/{dataset_file}.parquet")
     if not path.parent.is_dir():
         path.parent.mkdir(parents=True)
     df.to_parquet(path, compression="gzip")
@@ -46,24 +46,25 @@ def write_gcs(path: Path) -> None:
 
 
 @flow()
-def etl_web_to_gcs(year: int, month: int) -> None:
+def etl_web_to_gcs(year: int, month: int, color: str) -> None:
     """The main ETL function"""
-    dataset_file = f"fhv_tripdata_{year}-{month:02}"
-    dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/tag/fhv/{dataset_file}.csv.gz"
+    dataset_file = f"{color}_tripdata_{year}-{month:02}"
+    dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/tag/{dataset_file}.csv.gz"
     
     df = fetch(dataset_url)
     df_clean = clean(df)
-    path = write_local(df_clean, dataset_file)
+    path = write_local(df_clean, color, dataset_file)
     write_gcs(path)
       
 @flow()
-def etl_parent_flow(months: list[int] = [1,2,3,4,5,6,7,8,9,10,11,12], year: int = 2019):
+def etl_parent_flow(months: list[int] = [4], year: int = 2019, color: str = "fhv"):
     for month in months:
-        etl_web_to_gcs(year, month)
+        etl_web_to_gcs(year, month, color)
 
 
 if __name__ == "__main__":
+    color = "fhv"
     year = 2019
-    months = [1,2,3,4,5,6,7,8,9,10,11,12]
-    etl_parent_flow(months, year)
+    months = [1]
+    etl_parent_flow(months, year, color)
     
