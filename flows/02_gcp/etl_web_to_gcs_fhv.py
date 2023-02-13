@@ -12,7 +12,7 @@ def fetch(dataset_url: str) -> pd.DataFrame:
     # if randint(0, 1) > 0:
     #     raise Exception
 
-    df = pd.read_csv(dataset_url,compression='gzip',header=0)
+    df = pd.read_csv(dataset_url)
     return df
 
 
